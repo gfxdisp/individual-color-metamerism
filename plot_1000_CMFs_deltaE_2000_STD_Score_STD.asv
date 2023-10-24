@@ -118,9 +118,7 @@ end
 correlation_coefficient_Pearson = corr(E_std_flat_valid, score_std_flat_valid, 'type','Pearson');
 correlation_coefficient_Kendall = corr(E_std_flat_valid, score_std_flat_valid, 'type','Kendall');
 correlation_coefficient_Spearman = corr(E_std_flat_valid, score_std_flat_valid, 'type','Spearman');
-text(0.095, 0.81, sprintf('Pearson Correlation: %.2f', correlation_coefficient_Pearson), 'HorizontalAlignment', 'left', 'VerticalAlignment', 'middle');
-text(0.095, 0.79, sprintf('Kendall Correlation: %.2f', correlation_coefficient_Kendall), 'HorizontalAlignment', 'left', 'VerticalAlignment', 'middle');
-text(0.095, 0.77, sprintf('Spearman Correlation: %.2f', correlation_coefficient_Spearman), 'HorizontalAlignment', 'left', 'VerticalAlignment', 'middle');
+text(0.095, 0.83, 'Display 4 - ASUS VG246', 'HorizontalAlignment', 'left', 'VerticalAlignment', 'middle');
 
 for i = 1:11
     x = 0.1;
@@ -132,7 +130,7 @@ end
 text(0.095, 0.89, 'Display 1 - LG C2', 'HorizontalAlignment', 'left', 'VerticalAlignment', 'middle');
 text(0.095, 0.87, 'Display 2 - Sony X310', 'HorizontalAlignment', 'left', 'VerticalAlignment', 'middle');
 text(0.095, 0.85, 'Display 3 - Samsung Laser Projector', 'HorizontalAlignment', 'left', 'VerticalAlignment', 'middle');
-text(0.095, 0.83, 'Display 4 - ASUS VG246', 'HorizontalAlignment', 'left', 'VerticalAlignment', 'middle');
+text(0.095, 0.83, 'Display 4 - ASUS VG246', num, 'HorizontalAlignment', 'left', 'VerticalAlignment', 'middle');
 
 xlim([0, 0.11]);
 % ylim([0, 1.5]);

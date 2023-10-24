@@ -8,6 +8,12 @@ sys.path.append('./ColorVideoVDP')
 from pycvvdp.dolby_ictcp import ictcp
 import torch
 import json
+
+from scipy.stats import pearsonr
+from scipy.stats import kendalltau
+from scipy.stats import spearmanr
+
+
 # Read data from CSV files
 all_data = pd.read_csv('ObserverMetamerism/ObserverMetamerism/Data/YC_AllData.csv')
 ciexyz31_1 = pd.read_csv('ObserverMetamerism/ObserverMetamerism/Data/AuxData/ciexyz31_1.csv', header=None).to_numpy()
@@ -29,31 +35,32 @@ score_cell = np.empty((6, 11), dtype=object)
 
 deltaE_ITP_class = ictcp()
 # Calculate E_Cell
-for display_pattern_index in range(6):
-    display_1 = display_patterns[display_pattern_index, 0]
-    display_2 = display_patterns[display_pattern_index, 1]
-    for color_index in range(11):
-        display_spd_1 = display_spds[display_1 - 1]
-        display_spd_2 = display_spds[display_2 - 1]
-        E_set = []
-        for obs in range(num_obs):
-            X1, X2, Y1, Y2, Z1, Z2 = 0, 0, 0, 0, 0, 0
-            for lamda in range(390,785,5):
-                X1 = X1 + display_spd_1[color_index, lamda - 380] * obs_1000_cmfs[int((lamda - 390) / 5), 0, obs] * 5
-                X2 = X2 + display_spd_2[color_index, lamda - 380] * obs_1000_cmfs[int((lamda - 390) / 5), 0, obs] * 5
-                Y1 = Y1 + display_spd_1[color_index, lamda - 380] * obs_1000_cmfs[int((lamda - 390) / 5), 1, obs] * 5
-                Y2 = Y2 + display_spd_2[color_index, lamda - 380] * obs_1000_cmfs[int((lamda - 390) / 5), 1, obs] * 5
-                Z1 = Z1 + display_spd_1[color_index, lamda - 380] * obs_1000_cmfs[int((lamda - 390) / 5), 2, obs] * 5
-                Z2 = Z2 + display_spd_2[color_index, lamda - 380] * obs_1000_cmfs[int((lamda - 390) / 5), 2, obs] * 5
-            XYZ1 = torch.tensor([X1, Y1, Z1])[None,:,None,None,None]
-            XYZ2 = torch.tensor([X2, Y2, Z2])[None,:,None,None,None]
-            delta_E_ITP = deltaE_ITP_class.predict_xyz(XYZ1, XYZ2)
-            E_set.append(delta_E_ITP)
-        e_cell[display_pattern_index, color_index] = E_set
+# for display_pattern_index in range(6):
+#     display_1 = display_patterns[display_pattern_index, 0]
+#     display_2 = display_patterns[display_pattern_index, 1]
+#     for color_index in range(11):
+#         display_spd_1 = display_spds[display_1 - 1]
+#         display_spd_2 = display_spds[display_2 - 1]
+#         E_set = []
+#         for obs in range(num_obs):
+#             X1, X2, Y1, Y2, Z1, Z2 = 0, 0, 0, 0, 0, 0
+#             for lamda in range(390,785,5):
+#                 X1 = X1 + display_spd_1[color_index, lamda - 380] * obs_1000_cmfs[int((lamda - 390) / 5), 0, obs] * 5
+#                 X2 = X2 + display_spd_2[color_index, lamda - 380] * obs_1000_cmfs[int((lamda - 390) / 5), 0, obs] * 5
+#                 Y1 = Y1 + display_spd_1[color_index, lamda - 380] * obs_1000_cmfs[int((lamda - 390) / 5), 1, obs] * 5
+#                 Y2 = Y2 + display_spd_2[color_index, lamda - 380] * obs_1000_cmfs[int((lamda - 390) / 5), 1, obs] * 5
+#                 Z1 = Z1 + display_spd_1[color_index, lamda - 380] * obs_1000_cmfs[int((lamda - 390) / 5), 2, obs] * 5
+#                 Z2 = Z2 + display_spd_2[color_index, lamda - 380] * obs_1000_cmfs[int((lamda - 390) / 5), 2, obs] * 5
+#             XYZ1 = torch.tensor([X1, Y1, Z1])[None,:,None,None,None]
+#             XYZ2 = torch.tensor([X2, Y2, Z2])[None,:,None,None,None]
+#             delta_E_ITP = deltaE_ITP_class.predict_xyz(XYZ1, XYZ2)
+#             E_set.append(delta_E_ITP)
+#         e_cell[display_pattern_index, color_index] = E_set
 
-# with open(r'e_cell.json', 'r') as fp:
-#     data = json.load(fp)
-#     e_cell = np.array(data)
+
+with open(r'e_cell.json', 'r') as fp:
+    data = json.load(fp)
+    e_cell = np.array(data)
 
 # Initialize variables
 for i in range(6):
@@ -103,7 +110,7 @@ point_display_pattern_flat = point_display_pattern.flatten()
 valid_indices = ~np.isnan(e_means_flat) & ~np.isnan(score_means_flat)
 
 # Plot the scatter plot with error bars
-plt.figure()
+plt.figure(figsize=(10,5))
 plt.scatter(e_std_flat[valid_indices], score_std_flat[valid_indices], c=point_color_flat[valid_indices], edgecolors=point_color_flat[valid_indices])
 for indice in range(valid_indices.size):
     if not valid_indices[indice]:
@@ -112,6 +119,11 @@ for indice in range(valid_indices.size):
              "{}, {}".format(display_patterns[int(point_display_pattern_flat[indice]), 0],
                              display_patterns[int(point_display_pattern_flat[indice]), 1]),
              horizontalalignment='center')
+
+correlation_coefficient_Pearson = pearsonr(e_std_flat[valid_indices], score_std_flat[valid_indices]).correlation
+correlation_coefficient_Kendall = kendalltau(e_std_flat[valid_indices], score_std_flat[valid_indices]).correlation
+correlation_coefficient_Spearman = spearmanr(e_std_flat[valid_indices], score_std_flat[valid_indices]).correlation
+
 
 for i in range(11):
     x = 1.4
@@ -123,6 +135,9 @@ plt.text(1.4, 0.89, 'Display 1 - LG C2', horizontalalignment='left', verticalali
 plt.text(1.4, 0.87, 'Display 2 - Sony X310', horizontalalignment='left', verticalalignment='center')
 plt.text(1.4, 0.85, 'Display 3 - Samsung Laser Projector', horizontalalignment='left', verticalalignment='center')
 plt.text(1.4, 0.83, 'Display 4 - ASUS VG246', horizontalalignment='left', verticalalignment='center')
+plt.text(1.4, 0.81, f'Pearson Correlation: {correlation_coefficient_Pearson}', horizontalalignment='left', verticalalignment='center')
+plt.text(1.4, 0.79, f'Kendall Correlation: {correlation_coefficient_Kendall}', horizontalalignment='left', verticalalignment='center')
+plt.text(1.4, 0.77, f'Spearman Correlation: {correlation_coefficient_Spearman}', horizontalalignment='left', verticalalignment='center')
 
 plt.xlim([0, 2])
 plt.xlabel('deltaE 2000 (Standard Deviation of 1000 values)')
